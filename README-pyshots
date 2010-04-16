@@ -1,0 +1,47 @@
+gtkShots (and pyshots)
+an utility to capture screenshots continuously
+==============================================
+
+gtkShots is a python/GTK application to capture screenshots continuosly.
+It is a hand tool to automatically save the screenshots in a (un)specified 
+period of time, with the possibility to schedule it and to choose options 
+for each screenshot to be saved, such as the size, the parent folder and 
+the time interval between them.
+
+gtkShots could be used for a lot of different aims, for instance to create 
+presentations, to monitor desktop activity, or for any other scope that 
+needs a screenshots sequence.
+
+gtkShots is actually a GUI frontend to pyshots, my command-line python 
+script to do the same job. Thus, if you need to work on the terminal 
+sessions, you could take advantage of this.
+
+gtkShots / pyshots are completely FOSS, free and open source software, 
+released under the terms of GNU GPL 2 license or (at your option) any 
+later version. Please make a donation if you like gtkShots!
+
+These are the command line option for pyshots.py:
+
+usage: pyshots.py [options]
+
+options:
+  -h, --help            show this help message and exit
+  -f FOLDER, --folder=FOLDER
+                        The folder where screenshots should be saved. Default
+                        is ~/Desktop/PyScreens
+  -s SIZE, --size=SIZE  The resize percentage for the screenshots to save.
+                        Default is 100% (no resize)
+  -t FREQUENCY, --frequency=FREQUENCY
+                        Snap a screenshot every (the given number of) seconds.
+                        Default is 300 (5 minutes)
+  -z STARTTIME, --start-after=STARTTIME
+                        Start after a number of seconds. Default is 0, start
+                        now
+  -u STOPTIME, --stop-after=STOPTIME
+                        Stop after a number of seconds. Default is -1, stop
+                        manually
+  -d, --daemon          Run as daemon
+
+Please send your comments, bug reports, and tips to:
+Flavio Gargiulo <flagar-AT-gmail-DOT-com>
+Thanks for using gtkShots!

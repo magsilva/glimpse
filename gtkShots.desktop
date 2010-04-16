@@ -1,0 +1,13 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+Exec=/usr/lib/gtkshots/gtkshots.py
+TryExec=/usr/lib/gtkshots/gtkshots.py
+Icon=/usr/lib/gtkshots/gtkshots.svg
+X-GNOME-DocPath=
+Terminal=false
+Name=gtkShots
+GenericName=
+Comment=An utility to capture screenshots continuously
+Categories=GNOME;Application;Graphics;
