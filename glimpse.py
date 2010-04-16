@@ -17,134 +17,101 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import gtk, gtk.glade, gobject, os, os.path, cPickle, time, webbrowser, gettext, sys
-if os.path.basename(sys.argv[0]) == 'gtkshots.py':
-    if os.path.dirname(sys.argv[0]) != '':
-        os.chdir(os.path.dirname(sys.argv[0]))
-gettext.bindtextdomain('gtkshots', 'po')
-gettext.textdomain('gtkshots')
-gettext.install('gtkshots', 'po', True)
-gtk.glade.bindtextdomain('gtkshots', 'po')
 
-class gtkShots:
-
+class glimpse:
     def __init__(self):
-        self.homepage = 'http://www.flagar.com/en/software/gtkshots'
+        self.__initialize_gui()
         self.home = os.path.expanduser('~')
-	self.prefsfile = os.path.join(self.home, '.gtkshots')
-        self.LoadPreferences()
-        self.win = gtk.glade.XML('gtkshots.glade', 'window1', 'gtkshots')
-        self.win_callbacks = {'on_window1_destroy':self.Quit, 'on_controlbutton_toggled':self.Control,
-                              'on_start1_activate':(self.ToggleControl, True), 'on_stop1_activate':(self.ToggleControl, False), 
-                              'on_quit1_activate':self.Quit,
-                              'on_donate1_activate':(self.LaunchBrowser, 'https://www.paypal.com/xclick/business=flagar%40gmail.com&item_name=Helping+gtkShots+development&no_shipping=1&tax=0&currency_code=EUR&lc=US'),
-                              'on_folderchooserbutton_current_folder_changed':self.UpdateFolder, 'on_sizecombobox_changed':self.UpdateSize,
-                              'on_frequencycombobox_changed':self.UpdateFrequency, 'on_daemoncheckbutton_toggled':self.UpdateDaemon,
-                              'on_startradiobutton_toggled':(self.ScheduledStart, False), 'on_scheduledstartradiobutton_toggled':(self.ScheduledStart, True),
-                              'on_stopradiobutton_toggled':(self.ScheduledStop, False), 'on_scheduledstopradiobutton_toggled':(self.ScheduledStop, True),
-                              'on_starthspinbutton_value_changed':self.UpdateStartTime, 'on_startmspinbutton_value_changed':self.UpdateStartTime,
-                              'on_stophspinbutton_value_changed':self.UpdateStopTime, 'on_stopmspinbutton_value_changed':self.UpdateStopTime,
-                              'on_about1_activate':self.About}
-        self.pyshotsfilename = os.path.join(os.path.expanduser('~'), '.pyshots')
-        self.start1 = self.win.get_widget('start1')
-        self.stop1 = self.win.get_widget('stop1')
-        self.starthspinbutton = self.win.get_widget('starthspinbutton')
-        self.startmspinbutton = self.win.get_widget('startmspinbutton')
-        self.stophspinbutton = self.win.get_widget('stophspinbutton')
-        self.stopmspinbutton = self.win.get_widget('stopmspinbutton')
-        self.controlbutton = self.win.get_widget('controlbutton')
-        self.controlbutton_image = self.win.get_widget('image5')
-        self.controlbutton_label = self.win.get_widget('label5')
-        self.statusbar = self.win.get_widget('statusbar1')
-        self.statusbar_context = self.statusbar.get_context_id('gtkShots')
-        if os.path.isfile(self.pyshotsfilename):
-            self.controlbutton.set_active(True)
-            self.controlbutton_image.set_from_stock(gtk.STOCK_STOP, gtk.ICON_SIZE_BUTTON)
-            self.controlbutton_label.set_text(_('Stop'))
-            self.start1.set_sensitive(False)
-            self.statusbar.push(self.statusbar_context, _('gtkShots pyshots running...'))
-        else:
-            self.stop1.set_sensitive(False)
-            self.statusbar.push(self.statusbar_context, _('Ready.'))
-        self.sizes = ['100%', '75%', '50%', '25%', '10%']
-        self.frequencies = [5, 15, 30, 60, 300, 600, 900, 1200, 1800, 3600, 10800, 21600, 43200, 86400]
-        self.folderchooserbutton = self.win.get_widget('folderchooserbutton')
-        self.sizecombobox = self.win.get_widget('sizecombobox')
-        self.frequencycombobox = self.win.get_widget('frequencycombobox')
-        self.daemoncheckbutton = self.win.get_widget('daemoncheckbutton')
-        self.folderchooserbutton.set_current_folder(self.prefs['folder'])
-        self.sizecombobox.set_active(self.sizes.index(self.prefs['size']))
-        self.frequencycombobox.set_active(self.frequencies.index(self.prefs['frequency']))
-        self.daemoncheckbutton.set_active(self.prefs['daemon'])
-        if self.prefs['scheduledstart']:
-            self.win.get_widget('scheduledstartradiobutton').set_active(True)
-            self.starthspinbutton.set_sensitive(True)
-            self.startmspinbutton.set_sensitive(True)
-        else:
-            self.win.get_widget('startradiobutton').set_active(True)
-        if self.prefs['scheduledstop']:
-            self.win.get_widget('scheduledstopradiobutton').set_active(True)
-            self.stophspinbutton.set_sensitive(True)
-            self.stopmspinbutton.set_sensitive(True)
-        else:
-            self.win.get_widget('stopradiobutton').set_active(True)
-        self.starthspinbutton.set_value(self.prefs['starttime'][0])
-        self.startmspinbutton.set_value(self.prefs['starttime'][1])
-        self.stophspinbutton.set_value(self.prefs['stoptime'][0])
-        self.stopmspinbutton.set_value(self.prefs['stoptime'][1])
+        self.prefsfile = os.path.join(self.home, '.glimpse')
+        self.LoadPreferences()       
         self.win.signal_autoconnect(self.win_callbacks)
+
+    def __initialize_gui(self):
+        self.win = gtk.glade.XML('glimpse.glade', 'MainWindow', 'glimpse')
+        self.win_callbacks = {
+            'on_MainWindow_destroy':self.Quit,
+            'on_StartItem_activate':(self.ToggleControl, True),
+            'on_StopItem_activate':(self.ToggleControl, False), 
+            'on_QuitItem_activate':self.Quit,
+            'on_AboutItem_activate':self.About, 
+            'on_AboutItem_close':self.CloseAbout, 
+            'on_FolderChooserButton_current_folder_changed':self.UpdateFolder,
+            'on_TimeTriggerCheckButton_toggled':self.EnableFrequency,
+            'on_TimeTriggerSpinButton_value_changed':self.UpdateFrequency,
+            'on_KeyboardTriggerCheckButton_toggled': self.EnableKeyboard, 
+            'on_MouseTriggerCheckButton_toggled': self.EnableMouse, 
+            'on_DelaySpinButton_change_value':self.UpdateDelay,
+            'on_StopManuallyRadioButton_toggled':self.UpdateStopManually,
+            'on_StopScheduledRadioButton_toggled':self.UpdateStopScheduled,
+            'on_StopScheduledSpinButton_change_value':self.UpdateStopScheduledTime,
+            'on_ToggleButton_toggled':self.Control
+        }
+        self.StartItem = self.win.get_widget('StartItem')
+        self.StopItem = self.win.get_widget('StopItem')
+        self.QuitItem = self.win.get_widget('QuitItem')
+        self.AboutItem = self.win.get_widget('AboutItem')
+
+        self.FolderChooserButton = self.win.get_widget('FolderChooserButton')
+
+        self.TimeTriggerCheckButton = self.win.get_widget('TimeTriggerCheckButton')
+        self.TimeTriggerSpinButton = self.win.get_widget('TimeTriggerSpinButton')
+        self.KeyboardTriggerCheckButton = self.win.get_widget('KeyboardTriggerCheckButton')
+        self.MouseTriggerSpinButton = self.win.get_widget('MouseTriggerSpinButton')
+
+        self.DelaySpinButton = self.win.get_widget('DelaySpinButton')
+
+        self.StopManuallyCheckButton = self.win.get_widget('StopManuallyCheckButton')
+        self.StopScheduledCheckButton = self.win.get_widget('StopScheduledCheckButton')
+        self.StopScheduledSpinButton = self.win.get_widget('StopScheduledSpinButton')
+        
+        self.ControlToggleButton = self.win.get_widget('ControlToggleButton')
+
+        self.StatusBar = self.win.get_widget('StatusBar')
+        self.StatusBarContext = self.StatusBar.get_context_id('glimpse')
+
 
     def UpdateFolder(self, widget):
         self.prefs['folder'] = self.folderchooserbutton.get_current_folder()
 
-    def UpdateSize(self, widget):
-        self.prefs['size'] = self.sizes[self.sizecombobox.get_active()]
-        scale = int(self.sizes[self.sizecombobox.get_active()][:-1])/100.0
-        width = int(gtk.gdk.screen_width()*scale)
-        height = int(gtk.gdk.screen_height()*scale)
-	self.statusbar.push(self.statusbar_context, _('Image size will be %sx%s') % (width, height))
+    def EnableFrequency(self,  widget):
+        self.prefs['frequency_enabled'] - self.timertriggerspinbutton.get_value_as_int()
 
     def UpdateFrequency(self, widget):
         self.prefs['frequency'] = self.frequencies[self.frequencycombobox.get_active()]
         if self.prefs['scheduledstop']:
             self.UpdateStopTime(None)
 
-    def UpdateDaemon(self, widget):
-        self.prefs['daemon'] = self.daemoncheckbutton.get_active()
-        if self.prefs['daemon']:
-            self.statusbar.push(self.statusbar_context, _('Then relaunch gtkShots to stop'))
+    def EnableKeyboard(self,  widget):
+        self.prefs['keyboard_enabled'] - self.keyboardtriggercheckbutton.get_value()
+
+    def EnableMouse(self,  widget):
+        self.prefs['mouse_enabled'] - self.mousetriggercheckbutton.get_value()
+
+    def UpdateDelay(self, widget):
+        self.prefs['scheduledstart'] = True
+        self.prefs['starttime'] = self.delayspinbutton.get_value_as_int()
+
+    def UpdateStopManually(self, widget):
+        if self.stopmanuallyradiobutton.get_value_as_boolean():
+            self.stopscheduledspinbutton.set_sensitive(False)
+            self.prefs['stop_strategy'] = 'manual'
         else:
-            self.statusbar.push(self.statusbar_context, '')
+            self.stopscheduledspinbutton.set_sensitive(True)
+            self.prefs['stop_strategy'] = 'scheduled'
+        self.UpdateStopTime(widget)
 
-    def ScheduledStart(self, widget, schedule):
-        if schedule:
-            self.starthspinbutton.set_sensitive(True)
-            self.startmspinbutton.set_sensitive(True)
-            self.prefs['scheduledstart'] = True
+    def UpdateStopScheduled(self, widget, schedule):
+        if self.stopscheduledspinbutton.get_value_as_boolean():
+            self.stopscheduledspinbutton.set_sensitive(True)
+            self.prefs['stop_strategy'] = 'scheduled'
         else:
-            self.starthspinbutton.set_sensitive(False)
-            self.startmspinbutton.set_sensitive(False)
-            self.prefs['scheduledstart'] = False
+            self.stopscheduledspinbutton.set_sensitive(False)
+            self.prefs['stop_strategy'] = 'manual'
+        self.UpdateStopTime(widget)
 
-    def ScheduledStop(self, widget, schedule):
-        if schedule:
-            self.stophspinbutton.set_sensitive(True)
-            self.stopmspinbutton.set_sensitive(True)
-            self.prefs['scheduledstop'] = True
-            self.UpdateStopTime(None)
-        else:
-            self.stophspinbutton.set_sensitive(False)
-            self.stopmspinbutton.set_sensitive(False)
-            self.prefs['scheduledstop'] = False
-            self.statusbar.push(self.statusbar_context, '')
-
-    def UpdateStartTime(self, widget):
-        self.prefs['starttime'] = (self.starthspinbutton.get_value_as_int(), self.startmspinbutton.get_value_as_int())
-
-    def UpdateStopTime(self, widget):
-        self.prefs['stoptime'] = (self.stophspinbutton.get_value_as_int(), self.stopmspinbutton.get_value_as_int())
-        imgs = (self.prefs['stoptime'][0]*3600+self.prefs['stoptime'][1]*60)/self.prefs['frequency']+1
-        self.statusbar.push(self.statusbar_context, _('%s images will be saved') % imgs)
-
+    def UpdateStopScheduledTime(self, widget):
+        self.prefs['stoptime'] = self.stopscheduledspinbutton.get_value_as_int()
+        
     def ToggleControl(self, widget, is_active):
         self.controlbutton.set_active(is_active)
 
@@ -165,13 +132,13 @@ class gtkShots:
     def Quit(self, widget):
         self.StorePreferences()
         gtk.main_quit()
+        
+    def CloseAbout(self,  widget):
+        widget.destroy()
 
     def Start(self, widget):
         self.start1.set_sensitive(False)
         self.stop1.set_sensitive(True)
-        #while gtk.events_pending():
-        #    gtk.main_iteration()
-        #self.pyshots = os.spawnvp(os.P_NOWAIT, 'python', ('python', '/home/flagar/gtkshots/pyshots.py', '-d'))
         self.StorePreferences()
         time.sleep(1)
         pyshots_opts = ['python', './pyshots.py', '-t', str(self.prefs['frequency']), '-s', self.prefs['size'], '-f', self.prefs['folder']]
@@ -184,8 +151,6 @@ class gtkShots:
             os.execvp('python', pyshots_opts)
         else:
             os.spawnvp(os.P_NOWAIT, 'python', pyshots_opts)
-        #while gtk.events_pending():
-        #    gtk.main_iteration()
         self.statusbar.push(self.statusbar_context, _('gtkShots pyshots started!'))
 
     def Stop(self, widget):
@@ -195,23 +160,21 @@ class gtkShots:
         pyshots = int(pidfile.read())
         pidfile.close()
         os.kill(pyshots, 15)  # SIGTERM
-        #os.kill(pyshots, 9)  # SIGKILL
-        #os.remove(self.pyshotsfilename)
         self.statusbar.push(self.statusbar_context, _('gtkShots pyshots stopped!'))
 
     def About(self, widget):
-	gtk.about_dialog_set_url_hook(self.LaunchBrowser)
-        self.about = gtk.glade.XML('gtkshots.glade', 'aboutdialog1', 'gtkshots')
-	self.aboutdlg = self.about.get_widget('aboutdialog1')
-	self.aboutdlg.set_icon_from_file('gtkshots.svg')
+        gtk.about_dialog_set_url_hook(self.LaunchBrowser)
+        self.about = gtk.glade.XML('glimpse.glade', 'AboutDialog', 'glimpse')
+        self.aboutdlg = self.about.get_widget('AboutDialog')
+        self.aboutdlg.set_icon_from_file('glimpse.svg')
 
     def LaunchBrowser(self, widget, link):
         webbrowser.open(link)
 
     def DefaultPreferences(self):
         self.prefs['folder'] = os.path.join(self.home, 'Desktop', 'PyScreens')
-	self.prefs['size'] = '50%'
-	self.prefs['frequency'] = 30
+        self.prefs['size'] = '50%'
+        self.prefs['frequency'] = 30
         self.prefs['daemon'] = False
         self.prefs['scheduledstart'] = False
         self.prefs['starttime'] = (0, 0)
@@ -223,16 +186,44 @@ class gtkShots:
         self.DefaultPreferences()
         if os.path.isfile(self.prefsfile):
             prefsfile = open(self.prefsfile, 'r')
-   	    prefs = cPickle.load(prefsfile)
-	    for prefkey, prefvalue in prefs.iteritems():
-	        self.prefs[prefkey] = prefvalue
-	    prefsfile.close()
+            prefs = cPickle.load(prefsfile)
+            for prefkey, prefvalue in prefs.iteritems():
+                self.prefs[prefkey] = prefvalue
+            prefsfile.close()
+            
+        self.FolderChooserButton.set_current_folder(self.prefs['folder'])
+        # self.frequencycombobox.set_active(self.frequencies.index(self.prefs['frequency']))
+        # self.daemoncheckbutton.set_active(self.prefs['daemon'])
+#        if self.prefs['scheduledstart']:
+#            self.win.get_widget('scheduledstartradiobutton').set_active(True)
+#            self.starthspinbutton.set_sensitive(True)
+#            self.startmspinbutton.set_sensitive(True)
+#        else:
+#            self.win.get_widget('startradiobutton').set_active(True)
+#        if self.prefs['scheduledstop']:
+#            self.win.get_widget('scheduledstopradiobutton').set_active(True)
+#            self.stophspinbutton.set_sensitive(True)
+#            self.stopmspinbutton.set_sensitive(True)
+#        else:
+#            self.win.get_widget('stopradiobutton').set_active(True)
+#        self.starthspinbutton.set_value(self.prefs['starttime'][0])
+#        self.startmspinbutton.set_value(self.prefs['starttime'][1])
+#        self.stophspinbutton.set_value(self.prefs['stoptime'][0])
+#        self.stopmspinbutton.set_value(self.prefs['stoptime'][1])
+
 
     def StorePreferences(self):
         prefsfile = open(self.prefsfile, 'w+')
-	cPickle.dump(self.prefs, prefsfile)
-	prefsfile.close()
+        cPickle.dump(self.prefs, prefsfile)
+        prefsfile.close()
 
 if __name__ == '__main__':
-    gtkShots()
+    if os.path.basename(sys.argv[0]) == 'glimpse.py':
+        if os.path.dirname(sys.argv[0]) != '':
+            os.chdir(os.path.dirname(sys.argv[0]))
+    gettext.bindtextdomain('glimpse', 'po')
+    gettext.textdomain('glimpse')
+    gettext.install('glimpse', 'po', True)
+    gtk.glade.bindtextdomain('glimpse', 'po')
+    glimpse()
     gtk.main()
