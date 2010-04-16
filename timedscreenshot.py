@@ -134,26 +134,32 @@ class TimedScreenshotSecondStage(SecondStageBaseEventClass):
                 screensize.x,
                 screensize.y)
             
-            screengrab.get_from_drawable(
+            screenshot = screengrab.get_from_drawable(
                 gtk.gdk.get_default_root_window(),
                 gtk.gdk.colormap_get_system(),
                 0, 0, 0, 0,
                 screensize.x,
                 screensize.y)
             
-            save_options_dict = {}
-            if self.subsettings['General']['Screenshot Image Format'].lower() in ['jpg','jpeg']:
-                self.subsettings['General']['Screenshot Image Format'] = 'jpeg'
-                save_options_dict = {'quality':to_unicode(self.subsettings['General']['Screenshot Image Quality'])}
+            if (screenshot != None):
+               save_options_dict = {}
+               if self.subsettings['General']['Screenshot Image Format'].lower() in ['jpg','jpeg']:
+                   self.subsettings['General']['Screenshot Image Format'] = 'jpeg'
+                   save_options_dict = {'quality':to_unicode(self.subsettings['General']['Screenshot Image Quality'])}
             
-            screengrab.save(savefilename, 
+               screenshot.save(savefilename, 
                     self.subsettings['General']['Screenshot Image Format'],
                     save_options_dict)
+            else
+               print "Unable to get screenshot"
 
         if os.name == 'nt':
             image_data = ImageGrab.grab((cropbox.topleft.x, cropbox.topleft.y, cropbox.bottomright.x, cropbox.bottomright.y))
-            image_data.save(savefilename, 
-                    quality=self.subsettings['General']['Screenshot Image Quality'])
+            if (image_data != None):
+                 image_data.save(savefilename, 
+                      quality=self.subsettings['General']['Screenshot Image Quality'])
+            else
+                 print "Unable to get screenshot"
 
     def get_screen_size(self):
         if os.name == 'posix':

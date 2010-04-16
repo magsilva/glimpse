@@ -1,3 +1,0 @@
-See the project website: 
-http://pykeylogger.sourceforge.net/ 
-for planned features of pykeylogger. it is updated frequently.

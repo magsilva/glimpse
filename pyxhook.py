@@ -75,9 +75,11 @@ class HookManager(threading.Thread):
         # Assign default function actions (do nothing).
         self.KeyDown = lambda x: True
         self.KeyUp = lambda x: True
-        self.MouseAllButtonsDown = lambda x: True
-        self.MouseAllButtonsUp = lambda x: True
+        self.MouseButtonDown = lambda x: True
+        self.MouseButtonUp = lambda x: True
+        self.MouseMotion = lambda x: True
         
+        #(X.KeyPress, X.ButtonPress),
         self.contextEventMask = [X.KeyPress,X.MotionNotify]
         
         # Hook to our display.
@@ -102,7 +104,7 @@ class HookManager(threading.Thread):
                         'ext_requests': (0, 0, 0, 0),
                         'ext_replies': (0, 0, 0, 0),
                         'delivered_events': (0, 0),
-                        'device_events': tuple(self.contextEventMask), #(X.KeyPress, X.ButtonPress),
+                        'device_events': tuple(self.contextEventMask), 
                         'errors': (0, 0),
                         'client_started': False,
                         'client_died': False,
@@ -157,15 +159,16 @@ class HookManager(threading.Thread):
                 self.KeyUp(hookevent)
             elif event.type == X.ButtonPress:
                 hookevent = self.buttonpressevent(event)
-                self.MouseAllButtonsDown(hookevent)
+                self.MouseButtonDown(hookevent)
             elif event.type == X.ButtonRelease:
                 hookevent = self.buttonreleaseevent(event)
-                self.MouseAllButtonsUp(hookevent)
+                self.MouseButtonUp(hookevent)
             elif event.type == X.MotionNotify:
                 # use mouse moves to record mouse position, since press and release events
                 # do not give mouse position info (event.root_x and event.root_y have 
                 # bogus info).
-                self.mousemoveevent(event)
+                hookevent = self.mousemotionevent(event)
+                self.MouseMotion(hookevent)
         
         #print "processing events...", event.type
 
@@ -205,27 +208,15 @@ class HookManager(threading.Thread):
         return self.makekeyhookevent(keysym, event)
 
     def buttonpressevent(self, event):
-        #self.clickx = self.rootx
-        #self.clicky = self.rooty
         return self.makemousehookevent(event)
 
     def buttonreleaseevent(self, event):
-        #if (self.clickx == self.rootx) and (self.clicky == self.rooty):
-            ##print "ButtonClick " + str(event.detail) + " x=" + str(self.rootx) + " y=" + str(self.rooty)
-            #if (event.detail == 1) or (event.detail == 2) or (event.detail == 3):
-                #self.captureclick()
-        #else:
-            #pass
-        
         return self.makemousehookevent(event)
-        
-        #    sys.stdout.write("ButtonDown " + str(event.detail) + " x=" + str(self.clickx) + " y=" + str(self.clicky) + "\n")
-        #    sys.stdout.write("ButtonUp " + str(event.detail) + " x=" + str(self.rootx) + " y=" + str(self.rooty) + "\n")
-        #sys.stdout.flush()
 
-    def mousemoveevent(self, event):
+    def mousemotionevent(self, event):
         self.mouse_position_x = event.root_x
         self.mouse_position_y = event.root_y
+        return self.makemousehookevent(event)
 
     # need the following because XK.keysym_to_string() only does printable chars
     # rather than being the correct inverse of XK.string_to_keysym()
@@ -252,23 +243,32 @@ class HookManager(threading.Thread):
     
     def makemousehookevent(self, event):
         storewm = self.xwindowinfo()
-        if event.detail == 1:
-            MessageName = "mouse left "
-        elif event.detail == 3:
-            MessageName = "mouse right "
-        elif event.detail == 2:
-            MessageName = "mouse middle "
-        elif event.detail == 5:
-            MessageName = "mouse wheel down "
-        elif event.detail == 4:
-            MessageName = "mouse wheel up "
-        else:
-            MessageName = "mouse " + str(event.detail) + " "
+        if event.type == X.MotionNotify:
+          self.mouse_position_x = event.root_x
+          self.mouse_position_y = event.root_y
+          MessageName = "mouse moved"
+        elif event.type == X.ButtonPress or event.type == X.ButtonRelease:
+          if self.mouse_position_x == None or self.mouse_position_y == None:
+            self.mouse_position_x = event.root_x
+            self.mouse_position_y = event.root_y
+          if event.detail == 1:
+             MessageName = "mouse left button"
+          elif event.detail == 3:
+             MessageName = "mouse right button"
+          elif event.detail == 2:
+             MessageName = "mouse middle button"
+          elif event.detail == 5:
+             MessageName = "mouse wheel down button"
+          elif event.detail == 4:
+             MessageName = "mouse wheel up button"
+          else:
+             MessageName = "mouse " + str(event.detail)
 
-        if event.type == X.ButtonPress:
-            MessageName = MessageName + "down"
-        elif event.type == X.ButtonRelease:
-            MessageName = MessageName + "up"
+          if event.type == X.ButtonPress:
+             MessageName = MessageName + " pressed"
+          elif event.type == X.ButtonRelease:
+              MessageName = MessageName + " released"
+            
         return pyxhookmouseevent(storewm["handle"], storewm["name"], storewm["class"], (self.mouse_position_x, self.mouse_position_y), MessageName)
     
     def xwindowinfo(self):
@@ -352,8 +352,9 @@ if __name__ == '__main__':
     hm.HookMouse()
     hm.KeyDown = hm.printevent
     hm.KeyUp = hm.printevent
-    hm.MouseAllButtonsDown = hm.printevent
-    hm.MouseAllButtonsUp = hm.printevent
+    hm.MouseButtonDown = hm.printevent
+    hm.MouseButtonUp = hm.printevent
+    hm.MouseMotion = hm.printevent
     hm.start()
     time.sleep(10)
     hm.cancel()
